@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  dcn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - LOG_LEVEL=info
+      - MONGODB_URI=mongodb://mongo:27017/dcn
+      - REDIS_URL=redis://redis:6379
+      - RPC_URL=http://hardhat:8545
+    depends_on:
+      - mongo
+      - redis
+      - hardhat
+    networks:
+      - dcn-network
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+
+  mongo:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=dcn
+    networks:
+      - dcn-network
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - dcn-network
+    volumes:
+      - redis-data:/data
+
+  hardhat:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "8545:8545"
+    networks:
+      - dcn-network
+    volumes:
+      - ./contracts:/app
+    command: npm run start:hardhat
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  dcn-network:
+    driver: bridge
